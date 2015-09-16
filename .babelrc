@@ -1,3 +1,4 @@
 {
-  "blacklist": ["useStrict"]
+  "blacklist": ["useStrict"],
+  "stage": 1
 }
