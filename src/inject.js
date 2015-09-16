@@ -8,5 +8,5 @@ export default function inject(property, service) {
     klass = jedify(klass);
     klass.prototype[property] = new Injector(service);
     return klass;
-  }
-}
+  };
+};
