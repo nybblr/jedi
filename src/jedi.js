@@ -1,7 +1,9 @@
-const jedi = {
-  greet() {
-    return 'hello';
-  }
-};
+import Service from './service';
+import Injector from './injector';
+import inject from './inject';
 
-export default jedi;
+export default {
+  Service,
+  Injector,
+  inject,
+};
