@@ -9,7 +9,7 @@ export default class Injector {
     return `<Injector:${this.name}>`;
   }
 
-  service() {
-    return new Service(this.name);
+  service(container) {
+    return container.lookup(this.name);
   }
 }

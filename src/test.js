@@ -15,4 +15,10 @@ class Baby extends Human {
   }
 }
 
-export { Human, Baby };
+class Cookies extends Jedi.Service {
+  munch() {
+    console.log('Munch munch munch');
+  }
+}
+
+export { Human, Baby, Cookies };
