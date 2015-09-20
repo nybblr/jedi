@@ -5,62 +5,82 @@ const CONTAINER_KEY = '__container__';
 
 export default class Container {
   constructor() {
-    this._instanceRegistry = {};
-    this._factoryRegistry = {};
+    this._registry = {};
   }
 
-  static containerFor(instance) {
-    return instance[CONTAINER_KEY] || new NullContainer();
+  static containerFor(obj) {
+    return obj[CONTAINER_KEY] || new NullContainer();
   }
 
-  static _leech(factory) {
-    return function(container, ...args) {
-      var instance = new factory(...args);
-      instance[CONTAINER_KEY] = container;
-      Container._injectServices(instance);
-      return instance;
-    };
+  inject(obj) {
+    this._injectServices(obj);
+    return obj;
   }
 
-  static _injectServices(obj) {
-    var container = Container.containerFor(obj);
+  lookup(name, ...args) {
+    var entry = this._lookupEntry(name);
 
-    for (var prop in obj) {
-      var val = obj[prop];
-      if (val instanceof Injector) {
-        obj[prop] = val.service(container);
-      }
+    if (entry == null) {
+      warn(`No such service "${name}" registered in this container.`);
+      return;
     }
-  }
 
-  lookup(name) {
-    var instance =
-      this._lookupInstance(name) ||
-      this._lookupFactory(name)(this);
+    var { factory, singleton, instantiate, instance } = entry;
 
-    this._registerInstance(name, instance);
+    if (instance != null) {
+      return instance;
+    }
+
+    if (instantiate) {
+      instance = this._instantiate(factory, args);
+    } else {
+      instance = factory;
+    }
+
+    if (singleton) {
+      entry.instance = instance;
+    }
 
     return instance;
   }
 
-  _lookupInstance(name) {
-    return this._instanceRegistry[name];
+  _lookupEntry(name) {
+    return this._registry[name];
   }
 
-  _lookupFactory(name) {
-    return this._factoryRegistry[name];
+  _instantiate(factory, args) {
+    var instance = new factory(...args);
+    this._injectServices(instance);
+    return instance;
   }
 
-  register(name, factory) {
-    this._factoryRegistry[name] = this.constructor._leech(factory);
+  _injectServices(obj) {
+    obj[CONTAINER_KEY] = this;
+
+    for (var prop in obj) {
+      var val = obj[prop];
+      if (val instanceof Injector) {
+        obj[prop] = val.service(this);
+      }
+    }
   }
 
-  _registerInstance(name, instance) {
-    this._instanceRegistry[name] = instance;
+  register(name, factory, { singleton = true, instantiate = true } = {}) {
+    var entry = { factory, singleton, instantiate };
+    this._registerEntry(name, entry);
+  }
+
+  _registerEntry(name, entry) {
+    this._registry[name] = entry;
   }
 }
 
 export class NullContainer extends Container {
+  inject(obj) {
+    warn(`A null container has no registered services!`);
+    return super.inject(obj);
+  }
+
   lookup(name) {
     warn(`No container was specified at injection time! The "${name}" service will not be available.`);
   }
